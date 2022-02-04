@@ -243,6 +243,11 @@ namespace NuGet.Common
         NU1503 = 1503,
 
         /// <summary>
+        /// No metadata file found
+        /// </summary>
+        NU1504 = 1504,
+
+        /// <summary>
         /// Dependency bumped up
         /// </summary>
         NU1601 = 1601,
