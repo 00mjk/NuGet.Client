@@ -243,11 +243,6 @@ namespace NuGet.Common
         NU1503 = 1503,
 
         /// <summary>
-        /// No metadata file found
-        /// </summary>
-        NU1504 = 1504,
-
-        /// <summary>
         /// Dependency bumped up
         /// </summary>
         NU1601 = 1601,
@@ -300,6 +295,11 @@ namespace NuGet.Common
         /// Feed error converted to a warning when ignoreFailedSources is true.
         /// </summary>
         NU1801 = 1801,
+
+        /// <summary>
+        /// No metadata file found
+        /// </summary>
+        NU1802 = 1802,
 
         /// <summary>
         /// Undefined signature error
