@@ -1,1 +1,2 @@
+NuGet.Protocol.LocalPackageFileCache.LocalPackageFileCache(NuGet.Common.ILogger logger) -> void
 NuGet.Repositories.NuGetv3LocalRepository.NuGetv3LocalRepository(string path, NuGet.Protocol.LocalPackageFileCache packageFileCache, bool isFallbackFolder, bool updateLastAccessTime) -> void
