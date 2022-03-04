@@ -1620,6 +1620,162 @@ EndGlobal";
             }
         }
 
+        [Theory]
+        [InlineData("PackageReference", "NU1504")]
+        [InlineData("PackageReference", "NU1506")]
+        public async Task DotnetRestore_WithDuplicateItem_WarnsWithLogCode(string itemName, string logCode)
+        {
+            using (var pathContext = _msbuildFixture.CreateSimpleTestPathContext())
+            {
+                var projectName = "ClassLibrary1";
+                var workingDirectory = Path.Combine(pathContext.SolutionRoot, projectName);
+                var projectFile = Path.Combine(workingDirectory, $"{projectName}.csproj");
+
+                _msbuildFixture.CreateDotnetNewProject(pathContext.SolutionRoot, projectName, "classlib -f netstandard2.0");
+
+                var packageContext = new SimpleTestPackageContext("X", "1.0.0");
+                packageContext.Files.Clear();
+                packageContext.Files.Add(new KeyValuePair<string, byte[]>(@"lib\netstandard2.0\x.dll", new byte[0]));
+                await SimpleTestPackageUtility.CreateFolderFeedV3Async(pathContext.PackageSource, packageContext);
+                using (var stream = File.Open(projectFile, FileMode.Open, FileAccess.ReadWrite))
+                {
+                    var xml = XDocument.Load(stream);
+                    var attributes100 = new Dictionary<string, string>() { { "Version", "[1.0.0]" } };
+                    var attributes200 = new Dictionary<string, string>() { { "Version", "[2.0.0]" } };
+
+                    ProjectFileUtils.AddItem(
+                        xml,
+                        itemName,
+                        "X",
+                        string.Empty,
+                        new Dictionary<string, string>(),
+                        attributes100);
+
+                    ProjectFileUtils.AddItem(
+                        xml,
+                        itemName,
+                        "X",
+                        string.Empty,
+                        new Dictionary<string, string>(),
+                        attributes200);
+                    ProjectFileUtils.WriteXmlToFile(xml, stream);
+                }
+
+                var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile}", ignoreExitCode: true);
+
+                result.Success.Should().BeTrue();
+                result.Errors.Contains(logCode);
+                result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
+            }
+        }
+
+        [Fact]
+        public async Task DotnetRestore_WithDuplicatePackageVersion_WarnsWithNU1507()
+        {
+            using (var pathContext = _msbuildFixture.CreateSimpleTestPathContext())
+            {
+                var projectName = "ClassLibrary1";
+                var workingDirectory = Path.Combine(pathContext.SolutionRoot, projectName);
+                var projectFile = Path.Combine(workingDirectory, $"{projectName}.csproj");
+
+                _msbuildFixture.CreateDotnetNewProject(pathContext.SolutionRoot, projectName, "classlib -f netstandard2.0");
+
+                var packageContext = new SimpleTestPackageContext("X", "1.0.0");
+                packageContext.Files.Clear();
+                packageContext.Files.Add(new KeyValuePair<string, byte[]>(@"lib\netstandard2.0\x.dll", new byte[0]));
+                await SimpleTestPackageUtility.CreateFolderFeedV3Async(pathContext.PackageSource, packageContext);
+
+                var directoryPackagesPropsContent =
+                    @"<Project>                    
+                        <ItemGroup>
+                            <PackageVersion Include=""X"" Version=""[1.0.0]"" />
+                            <PackageVersion Include=""X"" Version=""[2.0.0]"" />
+                        </ItemGroup>
+                    </Project>";
+                File.WriteAllText(Path.Combine(workingDirectory, $"Directory.Packages.Props"), directoryPackagesPropsContent);
+
+                using (var stream = File.Open(projectFile, FileMode.Open, FileAccess.ReadWrite))
+                {
+                    var xml = XDocument.Load(stream);
+                    ProjectFileUtils.AddProperty(
+                        xml,
+                        "ManagePackageVersionsCentrally",
+                        "true");
+
+                    ProjectFileUtils.AddItem(
+                         xml,
+                         "PackageReference",
+                         "X",
+                         string.Empty,
+                         new Dictionary<string, string>(),
+                         new Dictionary<string, string>());
+
+                    ProjectFileUtils.WriteXmlToFile(xml, stream);
+                }
+
+                var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile}", ignoreExitCode: true);
+
+                result.Success.Should().BeTrue();
+                result.Errors.Contains("NU1507");
+                result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
+            }
+        }
+
+        [Theory]
+        [InlineData("PackageReference", "NU1505")]
+        [InlineData("PackageReference", "NU1506")]
+        public async Task DotnetRestore_WithDuplicateItem_WithTreatWarningsAsErrors_ErrorsWithLogCode(string itemName, string logCode)
+        {
+            using (var pathContext = _msbuildFixture.CreateSimpleTestPathContext())
+            {
+                var projectName = "ClassLibrary1";
+                var workingDirectory = Path.Combine(pathContext.SolutionRoot, projectName);
+                var projectFile = Path.Combine(workingDirectory, $"{projectName}.csproj");
+
+                _msbuildFixture.CreateDotnetNewProject(pathContext.SolutionRoot, projectName, "classlib -f netstandard2.0");
+
+                var packageContext = new SimpleTestPackageContext("X", "1.0.0");
+                packageContext.Files.Clear();
+                packageContext.Files.Add(new KeyValuePair<string, byte[]>(@"lib\netstandard2.0\x.dll", new byte[0]));
+                await SimpleTestPackageUtility.CreateFolderFeedV3Async(pathContext.PackageSource, packageContext);
+                using (var stream = File.Open(projectFile, FileMode.Open, FileAccess.ReadWrite))
+                {
+                    var xml = XDocument.Load(stream);
+                    var attributes100 = new Dictionary<string, string>() { { "Version", "[1.0.0]" } };
+                    var attributes200 = new Dictionary<string, string>() { { "Version", "[2.0.0]" } };
+
+                    ProjectFileUtils.AddItem(
+                        xml,
+                        itemName,
+                        "X",
+                        string.Empty,
+                        new Dictionary<string, string>(),
+                        attributes100);
+
+                    ProjectFileUtils.AddItem(
+                        xml,
+                        itemName,
+                        "X",
+                        string.Empty,
+                        new Dictionary<string, string>(),
+                        attributes200);
+
+                    ProjectFileUtils.AddProperty(
+                        xml,
+                        "TreatWarningsAsErrors",
+                        "true");
+
+                    ProjectFileUtils.WriteXmlToFile(xml, stream);
+                }
+
+                var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile}", ignoreExitCode: true);
+
+                result.Success.Should().BeFalse();
+                result.Errors.Contains(logCode);
+                result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
+            }
+        }
+
         [Fact]
         public async Task WhenPackageSourceMappingConfiguredInstallsPackageReferencesAndDownloadsFromExpectedSources_Success()
         {
@@ -2071,6 +2227,108 @@ EndGlobal";
             Assert.Contains($"NU1100: Unable to resolve '{packageX} (>= {version})'", result.AllOutput);
             Assert.Contains($"Package source mapping matches found for package ID 'Y' are: 'source'.", result.AllOutput);
             Assert.Contains($"Installed {packageY} {version} from {pathContext.PackageSource}", result.AllOutput);
+        }
+
+        public async Task DotnetRestore_WithDuplicatePackageVersion_WithTreatWarningsAsErrors_ErrorsWithNU1507()
+        {
+            using (var pathContext = _msbuildFixture.CreateSimpleTestPathContext())
+            {
+                var projectName = "ClassLibrary1";
+                var workingDirectory = Path.Combine(pathContext.SolutionRoot, projectName);
+                var projectFile = Path.Combine(workingDirectory, $"{projectName}.csproj");
+
+                _msbuildFixture.CreateDotnetNewProject(pathContext.SolutionRoot, projectName, "classlib -f netstandard2.0");
+
+                var packageContext = new SimpleTestPackageContext("X", "1.0.0");
+                packageContext.Files.Clear();
+                packageContext.Files.Add(new KeyValuePair<string, byte[]>(@"lib\netstandard2.0\x.dll", new byte[0]));
+                await SimpleTestPackageUtility.CreateFolderFeedV3Async(pathContext.PackageSource, packageContext);
+
+                var directoryPackagesPropsContent =
+                    @"<Project>                    
+                        <ItemGroup>
+                            <PackageVersion Include=""X"" Version=""[1.0.0]"" />
+                            <PackageVersion Include=""X"" Version=""[2.0.0]"" />
+                        </ItemGroup>
+                    </Project>";
+                File.WriteAllText(Path.Combine(workingDirectory, $"Directory.Packages.Props"), directoryPackagesPropsContent);
+
+                using (var stream = File.Open(projectFile, FileMode.Open, FileAccess.ReadWrite))
+                {
+                    var xml = XDocument.Load(stream);
+                    ProjectFileUtils.AddProperty(
+                        xml,
+                        "ManagePackageVersionsCentrally",
+                        "true");
+
+                    ProjectFileUtils.AddItem(
+                         xml,
+                         "PackageReference",
+                         "X",
+                         string.Empty,
+                         new Dictionary<string, string>(),
+                         new Dictionary<string, string>());
+
+                    ProjectFileUtils.AddProperty(
+                        xml,
+                        "TreatWarningsAsErrors",
+                        "true");
+
+                    ProjectFileUtils.WriteXmlToFile(xml, stream);
+                }
+
+                var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile}", ignoreExitCode: true);
+
+                result.Success.Should().BeFalse();
+                result.Errors.Contains("NU1507");
+                result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
+            }
+        }
+
+        [Fact]
+        public async Task DotnetRestore_WithDuplicatePackageReference_RespectsContinueOnError()
+        {
+            using (var pathContext = _msbuildFixture.CreateSimpleTestPathContext())
+            {
+                var projectName = "ClassLibrary1";
+                var workingDirectory = Path.Combine(pathContext.SolutionRoot, projectName);
+                var projectFile = Path.Combine(workingDirectory, $"{projectName}.csproj");
+                var package = CreateNetstandardCompatiblePackage("X", "1.0.0");
+                await SimpleTestPackageUtility.CreatePackagesAsync(pathContext.PackageSource, package);
+
+                _msbuildFixture.CreateDotnetNewProject(pathContext.SolutionRoot, projectName, "classlib -f netstandard2.0");
+
+                using (var stream = File.Open(projectFile, FileMode.Open, FileAccess.ReadWrite))
+                {
+                    var xml = XDocument.Load(stream);
+
+                    var attributes100 = new Dictionary<string, string>() { { "Version", "[1.0.0]" } };
+                    var attributes200 = new Dictionary<string, string>() { { "Version", "[2.0.0]" } };
+
+                    ProjectFileUtils.AddItem(
+                        xml,
+                        "PackageReference",
+                        "X",
+                        string.Empty,
+                        new Dictionary<string, string>(),
+                        attributes100);
+
+                    ProjectFileUtils.AddItem(
+                        xml,
+                        "PackageReference",
+                        "X",
+                        string.Empty,
+                        new Dictionary<string, string>(),
+                        attributes200);
+                    ProjectFileUtils.WriteXmlToFile(xml, stream);
+                }
+
+                var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile} /p:ContinueOnError=true", ignoreExitCode: true);
+
+                result.Success.Should().BeTrue(because: result.AllOutput);
+                result.Errors.Contains("warning NU1504");
+                result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
+            }
         }
 
         private static SimpleTestPackageContext CreateNetstandardCompatiblePackage(string id, string version)
