@@ -182,10 +182,10 @@ Copyright (c) .NET Foundation. All rights reserved.
     </PropertyGroup>
 
     <CheckForDuplicateNuGetItemsTask
-      Condition="'$(RestoreWithNuGetExe)' != 'true' "
+      Condition="'$(DisableCheckingDuplicateNuGetItems)' != 'true' "
       Items="@(PackageReference)"
       ItemName="PackageReference"
-      LogCode="NU1504"
+      LogCode="NU1505"
       MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
       TreatWarningsAsErrors="$(TreatWarningsAsErrors)"
       WarningsAsErrors="$(WarningsAsErrors)"
@@ -217,10 +217,10 @@ Copyright (c) .NET Foundation. All rights reserved.
     </PropertyGroup>
 
     <CheckForDuplicateNuGetItemsTask
-      Condition="'$(RestoreWithNuGetExe)' != 'true' "
+      Condition="'$(DisableCheckingDuplicateNuGetItems)' != 'true' "
       Items="@(PackageVersion)"
       ItemName="PackageVersion"
-      LogCode="NU1506"
+      LogCode="NU1507"
       MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
       TreatWarningsAsErrors="$(TreatWarningsAsErrors)"
       WarningsAsErrors="$(WarningsAsErrors)"
@@ -253,10 +253,10 @@ Copyright (c) .NET Foundation. All rights reserved.
     </PropertyGroup>
 
     <CheckForDuplicateNuGetItemsTask
-      Condition="'$(RestoreWithNuGetExe)' != 'true' "
+      Condition="'$(DisableCheckingDuplicateNuGetItems)' != 'true' "
       Items="@(PackageDownload)"
       ItemName="PackageDownload"
-      LogCode="NU1505"
+      LogCode="NU1506"
       MSBuildProjectFullPath="$(MSBuildProjectFullPath)"
       TreatWarningsAsErrors="$(TreatWarningsAsErrors)"
       WarningsAsErrors="$(WarningsAsErrors)"
@@ -1376,7 +1376,7 @@ Copyright (c) .NET Foundation. All rights reserved.
       <_ValidProjectsForRestore Include="$(MSBuildProjectFullPath)" />
     </ItemGroup>
   </Target>
-  
+ 
   <!--
     ============================================================
     Import NuGet.RestoreEx.targets if the MSBuild property 'RestoreEnableStaticGraph'

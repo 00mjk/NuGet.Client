@@ -261,7 +261,7 @@ namespace NuGet.Common
         /// Duplicate PackageDownload found
         /// </summary>
         NU1506 = 1506,
-        
+
         /// <summary>
         /// Duplicate PackageVersion found
         /// </summary>

@@ -1621,8 +1621,8 @@ EndGlobal";
         }
 
         [Theory]
-        [InlineData("PackageReference", "NU1504")]
-        [InlineData("PackageReference", "NU1506")]
+        [InlineData("PackageReference", "NU1505")]
+        [InlineData("PackageDownload", "NU1506")]
         public async Task DotnetRestore_WithDuplicateItem_WarnsWithLogCode(string itemName, string logCode)
         {
             using (var pathContext = _msbuildFixture.CreateSimpleTestPathContext())
@@ -1633,9 +1633,7 @@ EndGlobal";
 
                 _msbuildFixture.CreateDotnetNewProject(pathContext.SolutionRoot, projectName, "classlib -f netstandard2.0");
 
-                var packageContext = new SimpleTestPackageContext("X", "1.0.0");
-                packageContext.Files.Clear();
-                packageContext.Files.Add(new KeyValuePair<string, byte[]>(@"lib\netstandard2.0\x.dll", new byte[0]));
+                var packageContext = CreateNetstandardCompatiblePackage("X", "1.0.0");
                 await SimpleTestPackageUtility.CreateFolderFeedV3Async(pathContext.PackageSource, packageContext);
                 using (var stream = File.Open(projectFile, FileMode.Open, FileAccess.ReadWrite))
                 {
@@ -1664,7 +1662,7 @@ EndGlobal";
                 var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile}", ignoreExitCode: true);
 
                 result.Success.Should().BeTrue();
-                result.Errors.Contains(logCode);
+                result.AllOutput.Should().Contain(logCode);
                 result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
             }
         }
@@ -1680,9 +1678,7 @@ EndGlobal";
 
                 _msbuildFixture.CreateDotnetNewProject(pathContext.SolutionRoot, projectName, "classlib -f netstandard2.0");
 
-                var packageContext = new SimpleTestPackageContext("X", "1.0.0");
-                packageContext.Files.Clear();
-                packageContext.Files.Add(new KeyValuePair<string, byte[]>(@"lib\netstandard2.0\x.dll", new byte[0]));
+                var packageContext = CreateNetstandardCompatiblePackage("X", "1.0.0");
                 await SimpleTestPackageUtility.CreateFolderFeedV3Async(pathContext.PackageSource, packageContext);
 
                 var directoryPackagesPropsContent =
@@ -1716,14 +1712,14 @@ EndGlobal";
                 var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile}", ignoreExitCode: true);
 
                 result.Success.Should().BeTrue();
-                result.Errors.Contains("NU1507");
+                result.AllOutput.Should().Contain("NU1507");
                 result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
             }
         }
 
         [Theory]
         [InlineData("PackageReference", "NU1505")]
-        [InlineData("PackageReference", "NU1506")]
+        [InlineData("PackageDownload", "NU1506")]
         public async Task DotnetRestore_WithDuplicateItem_WithTreatWarningsAsErrors_ErrorsWithLogCode(string itemName, string logCode)
         {
             using (var pathContext = _msbuildFixture.CreateSimpleTestPathContext())
@@ -1734,9 +1730,7 @@ EndGlobal";
 
                 _msbuildFixture.CreateDotnetNewProject(pathContext.SolutionRoot, projectName, "classlib -f netstandard2.0");
 
-                var packageContext = new SimpleTestPackageContext("X", "1.0.0");
-                packageContext.Files.Clear();
-                packageContext.Files.Add(new KeyValuePair<string, byte[]>(@"lib\netstandard2.0\x.dll", new byte[0]));
+                var packageContext = CreateNetstandardCompatiblePackage("X", "1.0.0");
                 await SimpleTestPackageUtility.CreateFolderFeedV3Async(pathContext.PackageSource, packageContext);
                 using (var stream = File.Open(projectFile, FileMode.Open, FileAccess.ReadWrite))
                 {
@@ -1771,7 +1765,7 @@ EndGlobal";
                 var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile}", ignoreExitCode: true);
 
                 result.Success.Should().BeFalse();
-                result.Errors.Contains(logCode);
+                result.AllOutput.Should().Contain(logCode);
                 result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
             }
         }
@@ -2239,9 +2233,7 @@ EndGlobal";
 
                 _msbuildFixture.CreateDotnetNewProject(pathContext.SolutionRoot, projectName, "classlib -f netstandard2.0");
 
-                var packageContext = new SimpleTestPackageContext("X", "1.0.0");
-                packageContext.Files.Clear();
-                packageContext.Files.Add(new KeyValuePair<string, byte[]>(@"lib\netstandard2.0\x.dll", new byte[0]));
+                var packageContext = CreateNetstandardCompatiblePackage("X", "1.0.0");
                 await SimpleTestPackageUtility.CreateFolderFeedV3Async(pathContext.PackageSource, packageContext);
 
                 var directoryPackagesPropsContent =
@@ -2280,7 +2272,7 @@ EndGlobal";
                 var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile}", ignoreExitCode: true);
 
                 result.Success.Should().BeFalse();
-                result.Errors.Contains("NU1507");
+                result.Errors.Should().Contain("NU1507");
                 result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
             }
         }
@@ -2326,7 +2318,7 @@ EndGlobal";
                 var result = _msbuildFixture.RunDotnet(workingDirectory, $"restore {projectFile} /p:ContinueOnError=true", ignoreExitCode: true);
 
                 result.Success.Should().BeTrue(because: result.AllOutput);
-                result.Errors.Contains("warning NU1504");
+                result.AllOutput.Should().Contain("warning NU1505");
                 result.AllOutput.Contains("X [1.0.0], X [2.0.0]");
             }
         }
@@ -2334,7 +2326,6 @@ EndGlobal";
         private static SimpleTestPackageContext CreateNetstandardCompatiblePackage(string id, string version)
         {
             var pkgX = new SimpleTestPackageContext(id, version);
-            pkgX.Files.Clear();
             pkgX.AddFile($"lib/netstandard2.0/x.dll");
             return pkgX;
         }

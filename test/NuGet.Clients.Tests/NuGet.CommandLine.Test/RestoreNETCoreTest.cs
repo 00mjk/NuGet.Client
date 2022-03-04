@@ -11138,10 +11138,11 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
             // Even though there is eligible source SharedRepository exist but only opensourceRepositoryPath passed as option it'll fail to restore.
             Assert.Contains($"Failed to restore {projectA.ProjectPath}", r.Output);
         }
+
         [Theory]
         [InlineData("PackageReference", "NU1505")]
         [InlineData("PackageDownload", "NU1506")]
-        public async Task NuGetExeRestore_WithDuplicatePackageItems_Succeeds(string item, string warningCode)
+        public async Task NuGetExeRestore_WithDuplicatePackageItems_SucceedsAndDoesNotWarn(string item, string warningCode)
         {
             // Arrange
             using (var pathContext = new SimpleTestPathContext())
@@ -11186,9 +11187,6 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
                                     attributes);
                 xml.Save(projectA.ProjectPath);
 
-                // Act
-                var nugetexe = Util.GetNuGetExePath();
-
                 var args = new string[] {
                     "restore",
                     solution.SolutionPath,
@@ -11198,7 +11196,7 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
 
                 // Act
                 var r = CommandRunner.Run(
-                    nugetexe,
+                    Util.GetNuGetExePath(),
                     pathContext.WorkingDirectory.Path,
                     string.Join(" ", args),
                     waitForExit: true);
@@ -11210,7 +11208,7 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
         }
 
         [Fact]
-        public async Task NuGetExeRestore_WithDuplicatePackageVersion_Succeeds()
+        public async Task NuGetExeRestore_WithDuplicatePackageVersion_SucceedsAndDoesNotWarn()
         {
             // Arrange
             using (var pathContext = new SimpleTestPathContext())
@@ -11257,9 +11255,6 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
                     </Project>";
                 File.WriteAllText(Path.Combine(pathContext.SolutionRoot, $"Directory.Packages.Props"), directoryPackagesPropsContent);
 
-                // Act
-                var nugetexe = Util.GetNuGetExePath();
-
                 var args = new string[] {
                     "restore",
                     solution.SolutionPath,
@@ -11269,7 +11264,7 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
 
                 // Act
                 var r = CommandRunner.Run(
-                    nugetexe,
+                    Util.GetNuGetExePath(),
                     pathContext.WorkingDirectory.Path,
                     string.Join(" ", args),
                     waitForExit: true);
