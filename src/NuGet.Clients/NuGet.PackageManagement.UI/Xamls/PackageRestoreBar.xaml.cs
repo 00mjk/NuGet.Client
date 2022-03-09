@@ -119,14 +119,14 @@ namespace NuGet.PackageManagement.UI
                     {
                         string solutionDirectory = await _solutionManager.GetSolutionDirectoryAsync(CancellationToken.None);
                         _componentModel = await AsyncServiceProvider.GlobalProvider.GetComponentModelAsync();
-                        _vsSolutionManager = _componentModel.GetService<IVsSolutionManager>();
+                        _vsSolutionManager = _componentModel?.GetService<IVsSolutionManager>();
 
                         // when the control is first loaded, check for missing packages
                         if (await ExperimentUtility.IsTransitiveOriginExpEnabled.GetValueAsync(CancellationToken.None) &&
                             _projectContextInfo?.ProjectStyle == ProjectModel.ProjectStyle.PackageReference &&
                             await GetMissingAssetsFileStatusAsync(_projectContextInfo.ProjectId))
                         {
-                            _solutionRestoreWorker = _componentModel.GetService<ISolutionRestoreWorker>();
+                            _solutionRestoreWorker = _componentModel?.GetService<ISolutionRestoreWorker>();
                             _packageRestoreManager.RaiseAssetsFileMissingEventForProjectAsync(true);
                         }
                         else
